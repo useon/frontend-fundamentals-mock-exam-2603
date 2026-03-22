@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Top, Spacing, Border } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
+import { useToast } from '../../../../app/ToastProvider';
 import { QueryAsyncBoundary } from '../../../../app/QueryAsyncBoundary';
 import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAvailableRooms';
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
@@ -15,6 +16,7 @@ import { FilterPanel } from './components/FilterPanel';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { filters, updateFilter } = useBookingFilters();
   const { date, startTime, endTime, attendees, equipment, preferredFloor } = filters;
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -46,6 +48,8 @@ export function RoomBookingPage() {
       return;
     }
 
+    setErrorMessage(null);
+
     try {
       const result = await createReservationMutation.mutateAsync(getCreateReservationPayload(selectedRoomId));
 
@@ -54,10 +58,12 @@ export function RoomBookingPage() {
         return;
       }
 
-      setErrorMessage(result.message ?? '예약에 실패했습니다.');
+      showToast({
+        type: 'error',
+        message: result.message ?? '예약에 실패했습니다.',
+      });
       setSelectedRoomId(null);
-    } catch (error: unknown) {
-      setErrorMessage(error instanceof Error && error.message ? error.message : '예약에 실패했습니다.');
+    } catch (_error: unknown) {
       setSelectedRoomId(null);
     }
   };
