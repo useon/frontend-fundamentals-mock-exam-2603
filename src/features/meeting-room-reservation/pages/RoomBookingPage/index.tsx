@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Top, Spacing, Border, Text } from '_tosslib/components';
+import { Top, Spacing, Border } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { QueryAsyncBoundary } from '../../../../app/QueryAsyncBoundary';
 import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAvailableRooms';
@@ -10,6 +10,7 @@ import { useCreateReservationMutation } from 'features/meeting-room-reservation/
 import { useRoomBookingQuery } from 'features/meeting-room-reservation/hooks/useRoomBookingQuery';
 import { BookingFilters, CreateReservationRequest } from 'features/meeting-room-reservation/model/types';
 import { AvailableRoomList } from './components/AvailableRoomList';
+import { BookingErrorMessage } from './components/BookingErrorMessage';
 import { FilterPanel } from './components/FilterPanel';
 
 export function RoomBookingPage() {
@@ -101,29 +102,7 @@ export function RoomBookingPage() {
         예약하기
       </Top.Top03>
 
-      {errorMessage && (
-        <div
-          css={css`
-            padding: 0 24px;
-          `}
-        >
-          <Spacing size={12} />
-          <div
-            css={css`
-              padding: 10px 14px;
-              border-radius: 10px;
-              background: ${colors.red50};
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            `}
-          >
-            <Text typography="t7" fontWeight="medium" color={colors.red500}>
-              {errorMessage}
-            </Text>
-          </div>
-        </div>
-      )}
+      {errorMessage && <BookingErrorMessage message={errorMessage} />}
 
       <Spacing size={24} />
 
