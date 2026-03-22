@@ -1,9 +1,10 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { meetingRoomReservationQueryKeys } from '../api/queryKeys';
 import { getMyReservations, getReservations, getRooms } from '../api/remotes';
+import { isValidDateParam } from '../lib/time';
  
 export function useReservationStatusQuery(date: string) {
-  const hasValidDate = /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const hasValidDate = isValidDateParam(date);
 
   const { data: rooms } = useSuspenseQuery({
     queryKey: meetingRoomReservationQueryKeys.rooms(),
