@@ -37,14 +37,22 @@ export function RoomBookingPage() {
     equipment,
   });
 
-  const handleBook = async () => {
+  const getBookingValidationMessage = () => {
     if (!selectedRoomId) {
-      setErrorMessage('회의실을 선택해주세요.');
-      return;
+      return '회의실을 선택해주세요.';
     }
 
     if (!startTime || !endTime) {
-      setErrorMessage('시작 시간과 종료 시간을 선택해주세요.');
+      return '시작 시간과 종료 시간을 선택해주세요.';
+    }
+
+    return null;
+  };
+
+  const handleBook = async () => {
+    const validationMessage = getBookingValidationMessage();
+    if (validationMessage) {
+      setErrorMessage(validationMessage);
       return;
     }
 
