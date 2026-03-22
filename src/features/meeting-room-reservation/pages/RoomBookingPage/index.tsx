@@ -1,11 +1,12 @@
 import { css } from '@emotion/react';
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text, Select, ListRow } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
 import { ALL_EQUIPMENT, EQUIPMENT_LABELS, TIME_SLOTS } from 'features/meeting-room-reservation/config/constants';
+import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
 import { formatDate } from 'features/meeting-room-reservation/lib/time';
 import {
   getAvailableFloors,
@@ -13,46 +14,17 @@ import {
   isBookingFilterComplete,
   validateBookingFilters,
 } from 'features/meeting-room-reservation/model/filters';
-import {
-  BookingFilters,
-  CreateReservationRequest,
-  Equipment,
-  Room,
-} from 'features/meeting-room-reservation/model/types';
+import { CreateReservationRequest, Room } from 'features/meeting-room-reservation/model/types';
 import { getRooms, getReservations, createReservation } from 'features/meeting-room-reservation/api/remotes';
 import axios from 'axios';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const equipmentParam = searchParams.get('equipment');
-
-  const [date, setDate] = useState(searchParams.get('date') || formatDate(new Date()));
-  const [startTime, setStartTime] = useState(searchParams.get('startTime') || '');
-  const [endTime, setEndTime] = useState(searchParams.get('endTime') || '');
-  const [attendees, setAttendees] = useState(Number(searchParams.get('attendees')) || 1);
-  const [equipment, setEquipment] = useState<Equipment[]>(
-    equipmentParam
-      ? equipmentParam.split(',').filter((value): value is Equipment => ALL_EQUIPMENT.includes(value as Equipment))
-      : []
-  );
-  const [preferredFloor, setPreferredFloor] = useState<number | null>(
-    searchParams.get('floor') ? Number(searchParams.get('floor')) : null
-  );
+  const { filters, updateFilter } = useBookingFilters();
+  const { date, startTime, endTime, attendees, equipment, preferredFloor } = filters;
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params: Record<string, string> = {};
-    if (date) params.date = date;
-    if (startTime) params.startTime = startTime;
-    if (endTime) params.endTime = endTime;
-    if (attendees > 1) params.attendees = String(attendees);
-    if (equipment.length > 0) params.equipment = equipment.join(',');
-    if (preferredFloor !== null) params.floor = String(preferredFloor);
-    setSearchParams(params, { replace: true });
-  }, [date, startTime, endTime, attendees, equipment, preferredFloor, setSearchParams]);
 
   const { data: rooms = [] } = useQuery(meetingRoomReservationQueryKeys.rooms(), getRooms);
   const { data: reservations = [] } = useQuery(meetingRoomReservationQueryKeys.reservations(date), () => getReservations(date), {
@@ -71,14 +43,6 @@ export function RoomBookingPage() {
     setErrorMessage(null);
   };
 
-  const filters: BookingFilters = {
-    date,
-    startTime,
-    endTime,
-    attendees,
-    equipment,
-    preferredFloor,
-  };
   const validationError = validateBookingFilters(filters);
   const isFilterComplete = isBookingFilterComplete(filters) && !validationError;
 
@@ -215,7 +179,7 @@ export function RoomBookingPage() {
             value={date}
             min={formatDate(new Date())}
             onChange={e => {
-              setDate(e.target.value);
+              updateFilter('date', e.target.value);
               handleFilterChange();
             }}
             aria-label="날짜"
@@ -261,7 +225,7 @@ export function RoomBookingPage() {
             <Select
               value={startTime}
               onChange={e => {
-                setStartTime(e.target.value);
+                updateFilter('startTime', e.target.value);
                 handleFilterChange();
               }}
               aria-label="시작 시간"
@@ -288,7 +252,7 @@ export function RoomBookingPage() {
             <Select
               value={endTime}
               onChange={e => {
-                setEndTime(e.target.value);
+                updateFilter('endTime', e.target.value);
                 handleFilterChange();
               }}
               aria-label="종료 시간"
@@ -326,7 +290,7 @@ export function RoomBookingPage() {
               min={1}
               value={attendees}
               onChange={e => {
-                setAttendees(Math.max(1, Number(e.target.value)));
+                updateFilter('attendees', Math.max(1, Number(e.target.value)));
                 handleFilterChange();
               }}
               aria-label="참석 인원"
@@ -365,7 +329,7 @@ export function RoomBookingPage() {
               value={preferredFloor ?? ''}
               onChange={e => {
                 const val = e.target.value;
-                setPreferredFloor(val === '' ? null : Number(val));
+                updateFilter('preferredFloor', val === '' ? null : Number(val));
                 handleFilterChange();
               }}
               aria-label="선호 층"
@@ -401,7 +365,7 @@ export function RoomBookingPage() {
                   type="button"
                   onClick={() => {
                     const next = selected ? equipment.filter(e => e !== eq) : [...equipment, eq];
-                    setEquipment(next);
+                    updateFilter('equipment', next);
                     handleFilterChange();
                   }}
                   aria-label={EQUIPMENT_LABELS[eq]}
