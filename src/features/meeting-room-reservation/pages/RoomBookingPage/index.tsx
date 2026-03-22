@@ -58,10 +58,7 @@ export function RoomBookingPage() {
         return;
       }
 
-      showToast({
-        type: 'error',
-        message: result.message ?? '예약에 실패했습니다.',
-      });
+      setErrorMessage(result.message ?? '예약에 실패했습니다.');
       setSelectedRoomId(null);
     } catch (_error: unknown) {
       setSelectedRoomId(null);
