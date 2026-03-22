@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Top, Spacing, Border, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
-import { useToast } from '../../../../app/ToastProvider';
 import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
 import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAvailableRooms';
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
@@ -16,7 +15,6 @@ import axios from 'axios';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const { filters, updateFilter } = useBookingFilters();
   const { date, startTime, endTime, attendees, equipment, preferredFloor } = filters;
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -60,7 +58,6 @@ export function RoomBookingPage() {
       });
 
       if ('ok' in result && result.ok) {
-        showToast({ type: 'success', message: '예약이 완료되었습니다!' });
         navigate('/');
         return;
       }
