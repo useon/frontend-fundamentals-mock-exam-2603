@@ -1,12 +1,9 @@
 import { css } from '@emotion/react';
-import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Top, Spacing, Border, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
-import { AsyncBoundary } from '../../../../app/AsyncBoundary';
-import { QueryPendingFallback } from '../../../../app/QueryPendingFallback';
-import { QueryRejectedFallback } from '../../../../app/QueryRejectedFallback';
+import { QueryAsyncBoundary } from '../../../../app/QueryAsyncBoundary';
 import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAvailableRooms';
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
 import { useCreateReservationMutation } from 'features/meeting-room-reservation/hooks/useCreateReservationMutation';
@@ -130,32 +127,20 @@ export function RoomBookingPage() {
 
       <Spacing size={24} />
 
-      <QueryErrorResetBoundary>
-        {({ reset }) => (
-          <AsyncBoundary
-            pendingFallback={<QueryPendingFallback message="예약 가능한 회의실 정보를 불러오고 있어요." />}
-            rejectedFallback={({ reset: resetError }) => (
-              <QueryRejectedFallback
-                message="회의실 정보를 다시 불러와 주세요."
-                onRetry={() => {
-                  reset();
-                  resetError();
-                }}
-              />
-            )}
-          >
-            <RoomBookingContent
-              filters={filters}
-              selectedRoomId={selectedRoomId}
-              isSubmitting={createReservationMutation.isLoading}
-              onChangeFilter={updateFilter}
-              onResetSelection={handleFilterChange}
-              onSelectRoom={setSelectedRoomId}
-              onSubmit={handleBook}
-            />
-          </AsyncBoundary>
-        )}
-      </QueryErrorResetBoundary>
+      <QueryAsyncBoundary
+        pendingMessage="예약 가능한 회의실 정보를 불러오고 있어요."
+        rejectedMessage="회의실 정보를 다시 불러와 주세요."
+      >
+        <RoomBookingContent
+          filters={filters}
+          selectedRoomId={selectedRoomId}
+          isSubmitting={createReservationMutation.isLoading}
+          onChangeFilter={updateFilter}
+          onResetSelection={handleFilterChange}
+          onSelectRoom={setSelectedRoomId}
+          onSubmit={handleBook}
+        />
+      </QueryAsyncBoundary>
 
       <Spacing size={24} />
     </div>

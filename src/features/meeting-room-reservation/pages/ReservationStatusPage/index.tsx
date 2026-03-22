@@ -1,5 +1,4 @@
 import { css } from '@emotion/react';
-import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Top, Spacing, Border, Button } from '_tosslib/components';
@@ -8,9 +7,7 @@ import { useCancelReservationMutation } from 'features/meeting-room-reservation/
 import { useReservationStatusQuery } from 'features/meeting-room-reservation/hooks/useReservationStatusQuery';
 import { formatDate } from 'features/meeting-room-reservation/lib/time';
 import { Room } from 'features/meeting-room-reservation/model/types';
-import { AsyncBoundary } from '../../../../app/AsyncBoundary';
-import { QueryPendingFallback } from '../../../../app/QueryPendingFallback';
-import { QueryRejectedFallback } from '../../../../app/QueryRejectedFallback';
+import { QueryAsyncBoundary } from '../../../../app/QueryAsyncBoundary';
 import { DateFilter } from './components/DateFilter';
 import { MyReservationList } from './components/MyReservationList';
 import { ReservationTimeline } from './components/ReservationTimeline';
@@ -40,28 +37,16 @@ export function ReservationStatusPage() {
       <Border size={8} />
       <Spacing size={24} />
 
-      <QueryErrorResetBoundary>
-        {({ reset }) => (
-          <AsyncBoundary
-            pendingFallback={<QueryPendingFallback message="예약 현황을 불러오고 있어요." />}
-            rejectedFallback={({ reset: resetError }) => (
-              <QueryRejectedFallback
-                message="예약 현황을 다시 불러와 주세요."
-                onRetry={() => {
-                  reset();
-                  resetError();
-                }}
-              />
-            )}
-          >
-            <ReservationStatusContent
-              date={date}
-              activeReservationId={activeReservationId}
-              onToggleReservation={toggleActiveReservation}
-            />
-          </AsyncBoundary>
-        )}
-      </QueryErrorResetBoundary>
+      <QueryAsyncBoundary
+        pendingMessage="예약 현황을 불러오고 있어요."
+        rejectedMessage="예약 현황을 다시 불러와 주세요."
+      >
+        <ReservationStatusContent
+          date={date}
+          activeReservationId={activeReservationId}
+          onToggleReservation={toggleActiveReservation}
+        />
+      </QueryAsyncBoundary>
 
       <Spacing size={24} />
       <Border size={8} />
