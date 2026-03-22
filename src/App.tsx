@@ -7,6 +7,7 @@ import { GlobalPortal } from './GlobalPortal';
 import '_tosslib/sass/app.scss';
 import { PageLayout } from './app/PageLayout';
 import { Routes } from './app/Routes';
+import { ToastProvider } from './app/ToastProvider';
 
 export default function App() {
   const [queryClient] = useState(
@@ -24,19 +25,21 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <GlobalPortal.Provider>
-        <Global
-          styles={css`
-            ${normalize}
-            h1, h2, h3, h4, h5, h6 {
-              font-size: 1em;
-              font-weight: normal;
-              margin: 0; /* or '0 0 1em' if you're so inclined */
-            }
-          `}
-        />
-        <PageLayout>
-          <Routes />
-        </PageLayout>
+        <ToastProvider>
+          <Global
+            styles={css`
+              ${normalize}
+              h1, h2, h3, h4, h5, h6 {
+                font-size: 1em;
+                font-weight: normal;
+                margin: 0; /* or '0 0 1em' if you're so inclined */
+              }
+            `}
+          />
+          <PageLayout>
+            <Routes />
+          </PageLayout>
+        </ToastProvider>
       </GlobalPortal.Provider>
     </QueryClientProvider>
   );
