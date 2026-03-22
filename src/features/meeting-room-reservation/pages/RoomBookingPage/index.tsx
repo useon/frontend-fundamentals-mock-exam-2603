@@ -2,12 +2,11 @@ import { css } from '@emotion/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Top, Spacing, Border, Button, Text, Select, ListRow } from '_tosslib/components';
+import { Top, Spacing, Border, Button, Text, ListRow } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
-import { ALL_EQUIPMENT, EQUIPMENT_LABELS, TIME_SLOTS } from 'features/meeting-room-reservation/config/constants';
+import { EQUIPMENT_LABELS } from 'features/meeting-room-reservation/config/constants';
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
-import { formatDate } from 'features/meeting-room-reservation/lib/time';
 import {
   getAvailableFloors,
   getAvailableRooms,
@@ -16,6 +15,7 @@ import {
 } from 'features/meeting-room-reservation/model/filters';
 import { CreateReservationRequest, Room } from 'features/meeting-room-reservation/model/types';
 import { getRooms, getReservations, createReservation } from 'features/meeting-room-reservation/api/remotes';
+import { FilterPanel } from './components/FilterPanel';
 import axios from 'axios';
 
 export function RoomBookingPage() {
@@ -154,244 +154,12 @@ export function RoomBookingPage() {
 
       <Spacing size={24} />
 
-      <div
-        css={css`
-          padding: 0 24px;
-        `}
-      >
-        <Text typography="t5" fontWeight="bold" color={colors.grey900}>
-          예약 조건
-        </Text>
-        <Spacing size={16} />
-
-        <div
-          css={css`
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-          `}
-        >
-          <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>
-            날짜
-          </Text>
-          <input
-            type="date"
-            value={date}
-            min={formatDate(new Date())}
-            onChange={e => {
-              updateFilter('date', e.target.value);
-              handleFilterChange();
-            }}
-            aria-label="날짜"
-            css={css`
-              box-sizing: border-box;
-              font-size: 16px;
-              font-weight: 500;
-              line-height: 1.5;
-              height: 48px;
-              background-color: ${colors.grey50};
-              border-radius: 12px;
-              color: ${colors.grey800};
-              width: 100%;
-              border: 1px solid ${colors.grey200};
-              padding: 0 16px;
-              outline: none;
-              transition: border-color 0.15s;
-              &:focus {
-                border-color: ${colors.blue500};
-              }
-            `}
-          />
-        </div>
-        <Spacing size={14} />
-
-        <div
-          css={css`
-            display: flex;
-            gap: 12px;
-          `}
-        >
-          <div
-            css={css`
-              display: flex;
-              flex-direction: column;
-              gap: 6px;
-              flex: 1;
-            `}
-          >
-            <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>
-              시작 시간
-            </Text>
-            <Select
-              value={startTime}
-              onChange={e => {
-                updateFilter('startTime', e.target.value);
-                handleFilterChange();
-              }}
-              aria-label="시작 시간"
-            >
-              <option value="">선택</option>
-              {TIME_SLOTS.slice(0, -1).map(t => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div
-            css={css`
-              display: flex;
-              flex-direction: column;
-              gap: 6px;
-              flex: 1;
-            `}
-          >
-            <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>
-              종료 시간
-            </Text>
-            <Select
-              value={endTime}
-              onChange={e => {
-                updateFilter('endTime', e.target.value);
-                handleFilterChange();
-              }}
-              aria-label="종료 시간"
-            >
-              <option value="">선택</option>
-              {TIME_SLOTS.slice(1).map(t => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-        <Spacing size={14} />
-
-        <div
-          css={css`
-            display: flex;
-            gap: 12px;
-          `}
-        >
-          <div
-            css={css`
-              display: flex;
-              flex-direction: column;
-              gap: 6px;
-              flex: 1;
-            `}
-          >
-            <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>
-              참석 인원
-            </Text>
-            <input
-              type="number"
-              min={1}
-              value={attendees}
-              onChange={e => {
-                updateFilter('attendees', Math.max(1, Number(e.target.value)));
-                handleFilterChange();
-              }}
-              aria-label="참석 인원"
-              css={css`
-                box-sizing: border-box;
-                font-size: 16px;
-                font-weight: 500;
-                line-height: 1.5;
-                height: 48px;
-                background-color: ${colors.grey50};
-                border-radius: 12px;
-                color: ${colors.grey800};
-                width: 100%;
-                border: 1px solid ${colors.grey200};
-                padding: 0 16px;
-                outline: none;
-                transition: border-color 0.15s;
-                &:focus {
-                  border-color: ${colors.blue500};
-                }
-              `}
-            />
-          </div>
-          <div
-            css={css`
-              display: flex;
-              flex-direction: column;
-              gap: 6px;
-              flex: 1;
-            `}
-          >
-            <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>
-              선호 층
-            </Text>
-            <Select
-              value={preferredFloor ?? ''}
-              onChange={e => {
-                const val = e.target.value;
-                updateFilter('preferredFloor', val === '' ? null : Number(val));
-                handleFilterChange();
-              }}
-              aria-label="선호 층"
-            >
-              <option value="">전체</option>
-              {floors.map((f: number) => (
-                <option key={f} value={f}>
-                  {f}층
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-        <Spacing size={14} />
-
-        <div>
-          <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>
-            필요 장비
-          </Text>
-          <Spacing size={8} />
-          <div
-            css={css`
-              display: flex;
-              gap: 8px;
-              flex-wrap: wrap;
-            `}
-          >
-            {ALL_EQUIPMENT.map(eq => {
-              const selected = equipment.includes(eq);
-              return (
-                <button
-                  key={eq}
-                  type="button"
-                  onClick={() => {
-                    const next = selected ? equipment.filter(e => e !== eq) : [...equipment, eq];
-                    updateFilter('equipment', next);
-                    handleFilterChange();
-                  }}
-                  aria-label={EQUIPMENT_LABELS[eq]}
-                  aria-pressed={selected}
-                  css={css`
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    border: 1px solid ${selected ? colors.blue500 : colors.grey200};
-                    background: ${selected ? colors.blue50 : colors.grey50};
-                    color: ${selected ? colors.blue600 : colors.grey700};
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.15s;
-                    &:hover {
-                      border-color: ${selected ? colors.blue500 : colors.grey400};
-                    }
-                  `}
-                >
-                  {EQUIPMENT_LABELS[eq]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <FilterPanel
+        filters={filters}
+        floors={floors}
+        onChangeFilter={updateFilter}
+        onResetSelection={handleFilterChange}
+      />
 
       {validationError && (
         <div
