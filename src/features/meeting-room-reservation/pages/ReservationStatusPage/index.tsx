@@ -9,9 +9,14 @@ import {
   HOUR_LABELS,
   TOTAL_TIMELINE_MINUTES,
 } from 'features/meeting-room-reservation/config/constants';
+import {
+  cancelReservation,
+  getMyReservations,
+  getReservations,
+  getRooms,
+} from 'features/meeting-room-reservation/api/remotes';
 import { formatDate, timeToTimelineOffsetMinutes } from 'features/meeting-room-reservation/lib/time';
 import { Reservation, Room } from 'features/meeting-room-reservation/model/types';
-import { getRooms, getReservations, getMyReservations, cancelReservation } from 'pages/remotes';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();

@@ -18,7 +18,7 @@ import {
   Equipment,
   Room,
 } from 'features/meeting-room-reservation/model/types';
-import { getRooms, getReservations, createReservation } from 'pages/remotes';
+import { getRooms, getReservations, createReservation } from 'features/meeting-room-reservation/api/remotes';
 import axios from 'axios';
 
 export function RoomBookingPage() {

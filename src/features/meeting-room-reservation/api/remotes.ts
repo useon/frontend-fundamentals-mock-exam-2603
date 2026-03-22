@@ -1,10 +1,10 @@
-import { http } from 'pages/http';
+import { http } from './http';
 import {
   CreateReservationRequest,
   CreateReservationResponse,
   Reservation,
   Room,
-} from 'features/meeting-room-reservation/model/types';
+} from '../model/types';
 
 export function getRooms() {
   return http.get<Room[]>('/api/rooms');
