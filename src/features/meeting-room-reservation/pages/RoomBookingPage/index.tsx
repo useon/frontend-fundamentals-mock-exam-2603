@@ -9,9 +9,9 @@ import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAv
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
 import { useCreateReservationMutation } from 'features/meeting-room-reservation/hooks/useCreateReservationMutation';
 import { getRooms, getReservations } from 'features/meeting-room-reservation/api/remotes';
+import { CreateReservationRequest } from 'features/meeting-room-reservation/model/types';
 import { AvailableRoomList } from './components/AvailableRoomList';
 import { FilterPanel } from './components/FilterPanel';
-import axios from 'axios';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
@@ -58,6 +58,23 @@ export function RoomBookingPage() {
     navigate('/');
   };
 
+  const getBookingErrorMessage = (error: unknown) => {
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    return '예약에 실패했습니다.';
+  };
+
+  const getCreateReservationPayload = (roomId: string): CreateReservationRequest => ({
+    roomId,
+    date,
+    start: startTime,
+    end: endTime,
+    attendees,
+    equipment,
+  });
+
   const handleBook = async () => {
     const submitError = getBookingSubmitError();
     if (submitError) {
@@ -71,14 +88,7 @@ export function RoomBookingPage() {
     }
 
     try {
-      const result = await createReservationMutation.mutateAsync({
-        roomId,
-        date,
-        start: startTime,
-        end: endTime,
-        attendees,
-        equipment,
-      });
+      const result = await createReservationMutation.mutateAsync(getCreateReservationPayload(roomId));
 
       if ('ok' in result && result.ok) {
         handleBookingSuccess();
@@ -88,12 +98,7 @@ export function RoomBookingPage() {
       const errResult = result as { message?: string };
       handleBookingFailure(errResult.message ?? '예약에 실패했습니다.');
     } catch (err: unknown) {
-      let serverMessage = '예약에 실패했습니다.';
-      if (axios.isAxiosError(err)) {
-        const data = err.response?.data as { message?: string } | undefined;
-        serverMessage = data?.message ?? serverMessage;
-      }
-      handleBookingFailure(serverMessage);
+      handleBookingFailure(getBookingErrorMessage(err));
     }
   };
 

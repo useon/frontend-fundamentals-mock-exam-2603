@@ -17,8 +17,11 @@ export function useCancelReservationMutation() {
       });
       showToast({ type: 'success', message: '예약이 취소되었습니다.' });
     },
-    onError: () => {
-      showToast({ type: 'error', message: '취소에 실패했습니다.' });
+    onError: error => {
+      showToast({
+        type: 'error',
+        message: error instanceof Error && error.message ? error.message : '취소에 실패했습니다.',
+      });
     },
   });
 }
