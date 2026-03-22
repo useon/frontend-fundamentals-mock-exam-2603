@@ -1,15 +1,18 @@
 import { css } from '@emotion/react';
+import { QueryErrorResetBoundary, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Top, Spacing, Border, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
+import { AsyncBoundary } from '../../../../app/AsyncBoundary';
+import { QueryPendingFallback } from '../../../../app/QueryPendingFallback';
+import { QueryRejectedFallback } from '../../../../app/QueryRejectedFallback';
+import { getReservations, getRooms } from 'features/meeting-room-reservation/api/remotes';
 import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
 import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAvailableRooms';
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
 import { useCreateReservationMutation } from 'features/meeting-room-reservation/hooks/useCreateReservationMutation';
-import { getRooms, getReservations } from 'features/meeting-room-reservation/api/remotes';
-import { CreateReservationRequest } from 'features/meeting-room-reservation/model/types';
+import { BookingFilters, CreateReservationRequest } from 'features/meeting-room-reservation/model/types';
 import { AvailableRoomList } from './components/AvailableRoomList';
 import { FilterPanel } from './components/FilterPanel';
 
@@ -21,25 +24,10 @@ export function RoomBookingPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const createReservationMutation = useCreateReservationMutation();
 
-  const { data: rooms = [] } = useQuery(meetingRoomReservationQueryKeys.rooms(), getRooms);
-  const { data: reservations = [] } = useQuery(
-    meetingRoomReservationQueryKeys.reservations(date),
-    () => getReservations(date),
-    {
-      enabled: !!date,
-    }
-  );
-
   const handleFilterChange = () => {
     setSelectedRoomId(null);
     setErrorMessage(null);
   };
-
-  const { validationError, isFilterComplete, floors, availableRooms } = useAvailableRooms({
-    rooms,
-    reservations,
-    filters,
-  });
 
   const getCreateReservationPayload = (roomId: string): CreateReservationRequest => ({
     roomId,
@@ -143,11 +131,84 @@ export function RoomBookingPage() {
 
       <Spacing size={24} />
 
+      <QueryErrorResetBoundary>
+        {({ reset }) => (
+          <AsyncBoundary
+            pendingFallback={<QueryPendingFallback message="예약 가능한 회의실 정보를 불러오고 있어요." />}
+            rejectedFallback={({ reset: resetError }) => (
+              <QueryRejectedFallback
+                message="회의실 정보를 다시 불러와 주세요."
+                onRetry={() => {
+                  reset();
+                  resetError();
+                }}
+              />
+            )}
+          >
+            <RoomBookingContent
+              filters={filters}
+              selectedRoomId={selectedRoomId}
+              isSubmitting={createReservationMutation.isLoading}
+              onChangeFilter={updateFilter}
+              onResetSelection={handleFilterChange}
+              onSelectRoom={setSelectedRoomId}
+              onSubmit={handleBook}
+            />
+          </AsyncBoundary>
+        )}
+      </QueryErrorResetBoundary>
+
+      <Spacing size={24} />
+    </div>
+  );
+}
+
+type RoomBookingContentProps = {
+  filters: BookingFilters;
+  selectedRoomId: string | null;
+  isSubmitting: boolean;
+  onChangeFilter: <Key extends keyof BookingFilters>(key: Key, value: BookingFilters[Key]) => void;
+  onResetSelection: () => void;
+  onSelectRoom: (roomId: string | null) => void;
+  onSubmit: () => void;
+};
+
+function RoomBookingContent({
+  filters,
+  selectedRoomId,
+  isSubmitting,
+  onChangeFilter,
+  onResetSelection,
+  onSelectRoom,
+  onSubmit,
+}: RoomBookingContentProps) {
+  const hasValidDate = /^\d{4}-\d{2}-\d{2}$/.test(filters.date);
+
+  const { data: rooms } = useSuspenseQuery({
+    queryKey: meetingRoomReservationQueryKeys.rooms(),
+    queryFn: getRooms,
+  });
+  const { data: reservations = [] } = useQuery({
+    queryKey: meetingRoomReservationQueryKeys.reservations(filters.date),
+    queryFn: () => getReservations(filters.date),
+    enabled: hasValidDate,
+    suspense: true,
+    useErrorBoundary: true,
+  });
+
+  const { validationError, isFilterComplete, floors, availableRooms } = useAvailableRooms({
+    rooms,
+    reservations,
+    filters,
+  });
+
+  return (
+    <>
       <FilterPanel
         filters={filters}
         floors={floors}
-        onChangeFilter={updateFilter}
-        onResetSelection={handleFilterChange}
+        onChangeFilter={onChangeFilter}
+        onResetSelection={onResetSelection}
       />
 
       {validationError && (
@@ -177,13 +238,11 @@ export function RoomBookingPage() {
         <AvailableRoomList
           rooms={availableRooms}
           selectedRoomId={selectedRoomId}
-          isSubmitting={createReservationMutation.isLoading}
-          onSelectRoom={setSelectedRoomId}
-          onSubmit={handleBook}
+          isSubmitting={isSubmitting}
+          onSelectRoom={onSelectRoom}
+          onSubmit={onSubmit}
         />
       )}
-
-      <Spacing size={24} />
-    </div>
+    </>
   );
 }
