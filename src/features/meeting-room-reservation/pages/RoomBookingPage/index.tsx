@@ -30,8 +30,12 @@ export function RoomBookingPage() {
 
   const createMutation = useMutation((data: CreateReservationRequest) => createReservation(data), {
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries(meetingRoomReservationQueryKeys.reservations(variables.date));
-      queryClient.invalidateQueries(meetingRoomReservationQueryKeys.myReservations());
+      queryClient.invalidateQueries({
+        queryKey: meetingRoomReservationQueryKeys.reservations(variables.date),
+      });
+      queryClient.invalidateQueries({
+        queryKey: meetingRoomReservationQueryKeys.myReservations(),
+      });
     },
   });
 

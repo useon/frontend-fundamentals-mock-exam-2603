@@ -9,8 +9,12 @@ export function useCancelReservationMutation() {
 
   return useMutation((id: string) => cancelReservation(id), {
     onSuccess: () => {
-      queryClient.invalidateQueries(meetingRoomReservationQueryKeys.reservations());
-      queryClient.invalidateQueries(meetingRoomReservationQueryKeys.myReservations());
+      queryClient.invalidateQueries({
+        queryKey: meetingRoomReservationQueryKeys.reservations(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: meetingRoomReservationQueryKeys.myReservations(),
+      });
       showToast({ type: 'success', message: '예약이 취소되었습니다.' });
     },
     onError: () => {
