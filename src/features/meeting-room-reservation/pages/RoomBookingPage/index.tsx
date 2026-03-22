@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import { QueryErrorResetBoundary, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Top, Spacing, Border, Text } from '_tosslib/components';
@@ -7,11 +7,10 @@ import { colors } from '_tosslib/constants/colors';
 import { AsyncBoundary } from '../../../../app/AsyncBoundary';
 import { QueryPendingFallback } from '../../../../app/QueryPendingFallback';
 import { QueryRejectedFallback } from '../../../../app/QueryRejectedFallback';
-import { getReservations, getRooms } from 'features/meeting-room-reservation/api/remotes';
-import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
 import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAvailableRooms';
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
 import { useCreateReservationMutation } from 'features/meeting-room-reservation/hooks/useCreateReservationMutation';
+import { useRoomBookingQuery } from 'features/meeting-room-reservation/hooks/useRoomBookingQuery';
 import { BookingFilters, CreateReservationRequest } from 'features/meeting-room-reservation/model/types';
 import { AvailableRoomList } from './components/AvailableRoomList';
 import { FilterPanel } from './components/FilterPanel';
@@ -182,19 +181,7 @@ function RoomBookingContent({
   onSelectRoom,
   onSubmit,
 }: RoomBookingContentProps) {
-  const hasValidDate = /^\d{4}-\d{2}-\d{2}$/.test(filters.date);
-
-  const { data: rooms } = useSuspenseQuery({
-    queryKey: meetingRoomReservationQueryKeys.rooms(),
-    queryFn: getRooms,
-  });
-  const { data: reservations = [] } = useQuery({
-    queryKey: meetingRoomReservationQueryKeys.reservations(filters.date),
-    queryFn: () => getReservations(filters.date),
-    enabled: hasValidDate,
-    suspense: true,
-    useErrorBoundary: true,
-  });
+  const { rooms, reservations } = useRoomBookingQuery(filters.date);
 
   const { validationError, isFilterComplete, floors, availableRooms } = useAvailableRooms({
     rooms,
