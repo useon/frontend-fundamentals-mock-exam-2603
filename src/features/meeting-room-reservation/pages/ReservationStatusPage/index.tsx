@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text } from '_tosslib/components';
+import { useToast } from '../../../../app/ToastProvider';
 import { colors } from '_tosslib/constants/colors';
 import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
 import {
@@ -19,10 +20,8 @@ import { ReservationTimeline } from './components/ReservationTimeline';
 export function ReservationStatusPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [date, setDate] = useState(formatDate(new Date()));
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null
-  );
 
   const { data: rooms = [] } = useQuery(meetingRoomReservationQueryKeys.rooms(), getRooms);
   const { data: reservations = [] } = useQuery(meetingRoomReservationQueryKeys.reservations(date), () => getReservations(date), {
@@ -43,9 +42,9 @@ export function ReservationStatusPage() {
   const handleCancel = async (id: string) => {
     try {
       await cancelMutation.mutateAsync(id);
-      setMessage({ type: 'success', text: '예약이 취소되었습니다.' });
+      showToast({ type: 'success', message: '예약이 취소되었습니다.' });
     } catch {
-      setMessage({ type: 'error', text: '취소에 실패했습니다.' });
+      showToast({ type: 'error', message: '취소에 실패했습니다.' });
     }
   };
 
@@ -99,27 +98,6 @@ export function ReservationStatusPage() {
       <Spacing size={24} />
       <Border size={8} />
       <Spacing size={24} />
-
-      {message && (
-        <div css={css`padding: 0 24px;`}>
-          <div
-            css={css`
-              padding: 10px 14px; border-radius: 10px;
-              background: ${message.type === 'success' ? colors.blue50 : colors.red50};
-              display: flex; align-items: center; gap: 8px;
-            `}
-          >
-            <Text
-              typography="t7"
-              fontWeight="medium"
-              color={message.type === 'success' ? colors.blue600 : colors.red500}
-            >
-              {message.text}
-            </Text>
-          </div>
-          <Spacing size={12} />
-        </div>
-      )}
 
       <MyReservationList
         reservations={myReservationList}
