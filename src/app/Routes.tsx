@@ -1,6 +1,6 @@
+import { Navigate, Route, Routes as ReactRouterRoutes } from 'react-router-dom';
 import { ReservationStatusPage } from 'features/meeting-room-reservation/pages/ReservationStatusPage';
 import { RoomBookingPage } from 'features/meeting-room-reservation/pages/RoomBookingPage';
-import { Route, Routes as ReactRouterRoutes, Navigate } from 'react-router-dom';
 
 export const Routes = () => {
   return (

@@ -1,7 +1,6 @@
-import { colors } from '_tosslib/constants/colors';
-import { css } from '@emotion/react';
-
 import { ReactNode } from 'react';
+import { css } from '@emotion/react';
+import { colors } from '_tosslib/constants/colors';
 
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
