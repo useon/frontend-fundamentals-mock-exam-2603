@@ -22,9 +22,13 @@ export function RoomBookingPage() {
   const createReservationMutation = useCreateReservationMutation();
 
   const { data: rooms = [] } = useQuery(meetingRoomReservationQueryKeys.rooms(), getRooms);
-  const { data: reservations = [] } = useQuery(meetingRoomReservationQueryKeys.reservations(date), () => getReservations(date), {
-    enabled: !!date,
-  });
+  const { data: reservations = [] } = useQuery(
+    meetingRoomReservationQueryKeys.reservations(date),
+    () => getReservations(date),
+    {
+      enabled: !!date,
+    }
+  );
 
   const handleFilterChange = () => {
     setSelectedRoomId(null);
@@ -37,35 +41,6 @@ export function RoomBookingPage() {
     filters,
   });
 
-  const getBookingSubmitError = () => {
-    if (!selectedRoomId) {
-      return '회의실을 선택해주세요.';
-    }
-
-    if (!startTime || !endTime) {
-      return '시작 시간과 종료 시간을 선택해주세요.';
-    }
-
-    return null;
-  };
-
-  const handleBookingFailure = (message: string) => {
-    setErrorMessage(message);
-    setSelectedRoomId(null);
-  };
-
-  const handleBookingSuccess = () => {
-    navigate('/');
-  };
-
-  const getBookingErrorMessage = (error: unknown) => {
-    if (error instanceof Error && error.message) {
-      return error.message;
-    }
-
-    return '예약에 실패했습니다.';
-  };
-
   const getCreateReservationPayload = (roomId: string): CreateReservationRequest => ({
     roomId,
     date,
@@ -76,29 +51,29 @@ export function RoomBookingPage() {
   });
 
   const handleBook = async () => {
-    const submitError = getBookingSubmitError();
-    if (submitError) {
-      setErrorMessage(submitError);
+    if (!selectedRoomId) {
+      setErrorMessage('회의실을 선택해주세요.');
       return;
     }
 
-    const roomId = selectedRoomId;
-    if (roomId === null) {
+    if (!startTime || !endTime) {
+      setErrorMessage('시작 시간과 종료 시간을 선택해주세요.');
       return;
     }
 
     try {
-      const result = await createReservationMutation.mutateAsync(getCreateReservationPayload(roomId));
+      const result = await createReservationMutation.mutateAsync(getCreateReservationPayload(selectedRoomId));
 
       if ('ok' in result && result.ok) {
-        handleBookingSuccess();
+        navigate('/');
         return;
       }
 
-      const errResult = result as { message?: string };
-      handleBookingFailure(errResult.message ?? '예약에 실패했습니다.');
-    } catch (err: unknown) {
-      handleBookingFailure(getBookingErrorMessage(err));
+      setErrorMessage(result.message ?? '예약에 실패했습니다.');
+      setSelectedRoomId(null);
+    } catch (error: unknown) {
+      setErrorMessage(error instanceof Error && error.message ? error.message : '예약에 실패했습니다.');
+      setSelectedRoomId(null);
     }
   };
 
