@@ -1,12 +1,9 @@
 import { css } from '@emotion/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text } from '_tosslib/components';
-import { useToast } from '../../../../app/ToastProvider';
 import { colors } from '_tosslib/constants/colors';
-import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
-import { cancelReservation } from 'features/meeting-room-reservation/api/remotes';
+import { useCancelReservationMutation } from 'features/meeting-room-reservation/hooks/useCancelReservationMutation';
 import { useReservationStatusQuery } from 'features/meeting-room-reservation/hooks/useReservationStatusQuery';
 import { formatDate } from 'features/meeting-room-reservation/lib/time';
 import { Room } from 'features/meeting-room-reservation/model/types';
@@ -15,26 +12,13 @@ import { ReservationTimeline } from './components/ReservationTimeline';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { showToast } = useToast();
   const [date, setDate] = useState(formatDate(new Date()));
   const [activeReservationId, setActiveReservationId] = useState<string | null>(null);
   const { rooms, reservations, myReservationList } = useReservationStatusQuery(date);
-
-  const cancelMutation = useMutation((id: string) => cancelReservation(id), {
-    onSuccess: () => {
-      queryClient.invalidateQueries(meetingRoomReservationQueryKeys.reservations());
-      queryClient.invalidateQueries(meetingRoomReservationQueryKeys.myReservations());
-    },
-  });
+  const cancelReservationMutation = useCancelReservationMutation();
 
   const handleCancel = async (id: string) => {
-    try {
-      await cancelMutation.mutateAsync(id);
-      showToast({ type: 'success', message: '예약이 취소되었습니다.' });
-    } catch {
-      showToast({ type: 'error', message: '취소에 실패했습니다.' });
-    }
+    await cancelReservationMutation.mutateAsync(id);
   };
 
   const getRoomName = (roomId: string) => rooms.find((room: Room) => room.id === roomId)?.name ?? roomId;
