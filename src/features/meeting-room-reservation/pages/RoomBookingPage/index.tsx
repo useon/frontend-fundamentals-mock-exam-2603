@@ -6,13 +6,8 @@ import { Top, Spacing, Border, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { useToast } from '../../../../app/ToastProvider';
 import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
+import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAvailableRooms';
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
-import {
-  getAvailableFloors,
-  getAvailableRooms,
-  isBookingFilterComplete,
-  validateBookingFilters,
-} from 'features/meeting-room-reservation/model/filters';
 import { CreateReservationRequest } from 'features/meeting-room-reservation/model/types';
 import { getRooms, getReservations, createReservation } from 'features/meeting-room-reservation/api/remotes';
 import { AvailableRoomList } from './components/AvailableRoomList';
@@ -45,11 +40,11 @@ export function RoomBookingPage() {
     setErrorMessage(null);
   };
 
-  const validationError = validateBookingFilters(filters);
-  const isFilterComplete = isBookingFilterComplete(filters) && !validationError;
-
-  const floors = getAvailableFloors(rooms);
-  const availableRooms = isFilterComplete ? getAvailableRooms(rooms, reservations, filters) : [];
+  const { validationError, isFilterComplete, floors, availableRooms } = useAvailableRooms({
+    rooms,
+    reservations,
+    filters,
+  });
 
   const handleBook = async () => {
     if (!selectedRoomId) {
