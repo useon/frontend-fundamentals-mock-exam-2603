@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text, ListRow } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
+import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
 import {
   EQUIPMENT_LABELS,
   HOUR_LABELS,
@@ -35,14 +36,19 @@ export function ReservationStatusPage() {
     }
   }, [locationState]);
 
-  const { data: rooms = [] } = useQuery(['rooms'], getRooms);
-  const { data: reservations = [] } = useQuery(['reservations', date], () => getReservations(date), { enabled: !!date });
-  const { data: myReservationList = [] } = useQuery(['myReservations'], getMyReservations);
+  const { data: rooms = [] } = useQuery(meetingRoomReservationQueryKeys.rooms(), getRooms);
+  const { data: reservations = [] } = useQuery(meetingRoomReservationQueryKeys.reservations(date), () => getReservations(date), {
+    enabled: !!date,
+  });
+  const { data: myReservationList = [] } = useQuery(
+    meetingRoomReservationQueryKeys.myReservations(),
+    getMyReservations
+  );
 
   const cancelMutation = useMutation((id: string) => cancelReservation(id), {
     onSuccess: () => {
-      queryClient.invalidateQueries(['reservations']);
-      queryClient.invalidateQueries(['myReservations']);
+      queryClient.invalidateQueries(meetingRoomReservationQueryKeys.reservations());
+      queryClient.invalidateQueries(meetingRoomReservationQueryKeys.myReservations());
     },
   });
 
