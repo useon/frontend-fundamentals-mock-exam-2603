@@ -4,39 +4,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text, ListRow } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
+import {
+  EQUIPMENT_LABELS,
+  HOUR_LABELS,
+  TOTAL_TIMELINE_MINUTES,
+} from 'features/meeting-room-reservation/config/constants';
+import { formatDate, timeToTimelineOffsetMinutes } from 'features/meeting-room-reservation/lib/time';
+import { Reservation, Room } from 'features/meeting-room-reservation/model/types';
 import { getRooms, getReservations, getMyReservations, cancelReservation } from 'pages/remotes';
-
-const EQUIPMENT_LABELS: Record<string, string> = {
-  tv: 'TV',
-  whiteboard: '화이트보드',
-  video: '화상장비',
-  speaker: '스피커',
-};
-
-const TIME_SLOTS: string[] = [];
-for (let h = 9; h <= 20; h++) {
-  TIME_SLOTS.push(`${String(h).padStart(2, '0')}:00`);
-  if (h < 20) {
-    TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`);
-  }
-}
-
-const HOUR_LABELS = TIME_SLOTS.filter(t => t.endsWith(':00'));
-const TIMELINE_START = 9;
-const TIMELINE_END = 20;
-const TOTAL_MINUTES = (TIMELINE_END - TIMELINE_START) * 60;
-
-function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  return (h - TIMELINE_START) * 60 + m;
-}
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();
@@ -77,7 +52,7 @@ export function ReservationStatusPage() {
 
   const [activeReservation, setActiveReservation] = useState<string | null>(null);
 
-  const getRoomName = (roomId: string) => rooms.find((r: { id: string; name: string }) => r.id === roomId)?.name ?? roomId;
+  const getRoomName = (roomId: string) => rooms.find((room: Room) => room.id === roomId)?.name ?? roomId;
 
   return (
     <div css={css`background: ${colors.white}; padding-bottom: 40px;`}>
@@ -127,7 +102,7 @@ export function ReservationStatusPage() {
             <div css={css`width: 80px; flex-shrink: 0; padding-right: 8px;`} />
             <div css={css`flex: 1; position: relative; height: 18px;`}>
               {HOUR_LABELS.map(t => {
-                const left = (timeToMinutes(t) / TOTAL_MINUTES) * 100;
+                const left = (timeToTimelineOffsetMinutes(t) / TOTAL_TIMELINE_MINUTES) * 100;
                 return (
                   <Text
                     key={t}
@@ -147,8 +122,8 @@ export function ReservationStatusPage() {
           </div>
 
           {/* 회의실별 타임라인 */}
-          {rooms.map((room: { id: string; name: string }, index: number) => {
-            const roomReservations = reservations.filter((r: { roomId: string }) => r.roomId === room.id);
+          {rooms.map((room: Room, index: number) => {
+            const roomReservations = reservations.filter((reservation: Reservation) => reservation.roomId === room.id);
             return (
               <div
                 key={room.id}
@@ -162,9 +137,12 @@ export function ReservationStatusPage() {
                   </Text>
                 </div>
                 <div css={css`flex: 1; height: 24px; background: ${colors.white}; border-radius: 6px; position: relative; overflow: visible;`}>
-                  {roomReservations.map((res: { id: string; start: string; end: string; attendees: number; equipment: string[] }) => {
-                    const left = (timeToMinutes(res.start) / TOTAL_MINUTES) * 100;
-                    const width = ((timeToMinutes(res.end) - timeToMinutes(res.start)) / TOTAL_MINUTES) * 100;
+                  {roomReservations.map((res: Reservation) => {
+                    const left = (timeToTimelineOffsetMinutes(res.start) / TOTAL_TIMELINE_MINUTES) * 100;
+                    const width =
+                      ((timeToTimelineOffsetMinutes(res.end) - timeToTimelineOffsetMinutes(res.start)) /
+                        TOTAL_TIMELINE_MINUTES) *
+                      100;
                     const isActive = activeReservation === res.id;
                     return (
                       <div key={res.id} css={css`position: absolute; left: ${left}%; width: ${width}%; height: 100%;`}>
@@ -191,7 +169,7 @@ export function ReservationStatusPage() {
                             <div>{res.start} ~ {res.end}</div>
                             <div>{res.attendees}명</div>
                             {res.equipment.length > 0 && (
-                              <div>{res.equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ')}</div>
+                              <div>{res.equipment.map(e => EQUIPMENT_LABELS[e]).join(', ')}</div>
                             )}
                           </div>
                         )}
@@ -253,7 +231,7 @@ export function ReservationStatusPage() {
           </div>
         ) : (
           <div css={css`display: flex; flex-direction: column; gap: 10px;`}>
-            {myReservationList.map((res: { id: string; roomId: string; date: string; start: string; end: string; attendees: number; equipment: string[] }) => (
+            {myReservationList.map((res: Reservation) => (
               <div
                 key={res.id}
                 css={css`padding: 14px 16px; border-radius: 14px; background: ${colors.grey50}; border: 1px solid ${colors.grey200};`}
@@ -263,7 +241,7 @@ export function ReservationStatusPage() {
                     <ListRow.Text2Rows
                       top={getRoomName(res.roomId)}
                       topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
-                      bottom={`${res.date} ${res.start}~${res.end} · ${res.attendees}명 · ${res.equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ') || '장비 없음'}`}
+                      bottom={`${res.date} ${res.start}~${res.end} · ${res.attendees}명 · ${res.equipment.map(e => EQUIPMENT_LABELS[e]).join(', ') || '장비 없음'}`}
                       bottomProps={{ typography: 't7', color: colors.grey600 }}
                     />
                   }
