@@ -1,19 +1,13 @@
 import { css } from '@emotion/react';
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text } from '_tosslib/components';
 import { useToast } from '../../../../app/ToastProvider';
 import { colors } from '_tosslib/constants/colors';
 import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
-import {
-  cancelReservation,
-  getMyReservations,
-  getReservations,
-  getRooms,
-} from 'features/meeting-room-reservation/api/remotes';
+import { cancelReservation } from 'features/meeting-room-reservation/api/remotes';
+import { useReservationStatusQuery } from 'features/meeting-room-reservation/hooks/useReservationStatusQuery';
 import { formatDate } from 'features/meeting-room-reservation/lib/time';
-import { Reservation, Room } from 'features/meeting-room-reservation/model/types';
 import { MyReservationList } from './components/MyReservationList';
 import { ReservationTimeline } from './components/ReservationTimeline';
 
@@ -21,16 +15,16 @@ export function ReservationStatusPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const [date, setDate] = useState(formatDate(new Date()));
-
-  const { data: rooms = [] } = useQuery(meetingRoomReservationQueryKeys.rooms(), getRooms);
-  const { data: reservations = [] } = useQuery(meetingRoomReservationQueryKeys.reservations(date), () => getReservations(date), {
-    enabled: !!date,
-  });
-  const { data: myReservationList = [] } = useQuery(
-    meetingRoomReservationQueryKeys.myReservations(),
-    getMyReservations
-  );
+  const {
+    date,
+    setDate,
+    rooms,
+    reservations,
+    myReservationList,
+    activeReservationId,
+    toggleActiveReservation,
+    getRoomName,
+  } = useReservationStatusQuery();
 
   const cancelMutation = useMutation((id: string) => cancelReservation(id), {
     onSuccess: () => {
@@ -47,10 +41,6 @@ export function ReservationStatusPage() {
       showToast({ type: 'error', message: '취소에 실패했습니다.' });
     }
   };
-
-  const [activeReservation, setActiveReservation] = useState<string | null>(null);
-
-  const getRoomName = (roomId: string) => rooms.find((room: Room) => room.id === roomId)?.name ?? roomId;
 
   return (
     <div css={css`background: ${colors.white}; padding-bottom: 40px;`}>
@@ -89,10 +79,8 @@ export function ReservationStatusPage() {
       <ReservationTimeline
         rooms={rooms}
         reservations={reservations}
-        activeReservationId={activeReservation}
-        onToggleReservation={(reservationId) =>
-          setActiveReservation(currentReservationId => (currentReservationId === reservationId ? null : reservationId))
-        }
+        activeReservationId={activeReservationId}
+        onToggleReservation={toggleActiveReservation}
       />
 
       <Spacing size={24} />
