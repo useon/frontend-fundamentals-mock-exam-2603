@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
-import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
@@ -18,20 +18,11 @@ import { ReservationTimeline } from './components/ReservationTimeline';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const [date, setDate] = useState(formatDate(new Date()));
-
-  const locationState = location.state as { message?: string } | null;
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    locationState?.message ? { type: 'success', text: locationState.message } : null
+    null
   );
-
-  useEffect(() => {
-    if (locationState?.message) {
-      window.history.replaceState({}, '');
-    }
-  }, [locationState]);
 
   const { data: rooms = [] } = useQuery(meetingRoomReservationQueryKeys.rooms(), getRooms);
   const { data: reservations = [] } = useQuery(meetingRoomReservationQueryKeys.reservations(date), () => getReservations(date), {
