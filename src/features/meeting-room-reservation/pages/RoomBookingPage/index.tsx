@@ -1,42 +1,31 @@
 import { css } from '@emotion/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Top, Spacing, Border, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { useToast } from '../../../../app/ToastProvider';
 import { meetingRoomReservationQueryKeys } from 'features/meeting-room-reservation/api/queryKeys';
 import { useAvailableRooms } from 'features/meeting-room-reservation/hooks/useAvailableRooms';
 import { useBookingFilters } from 'features/meeting-room-reservation/hooks/useBookingFilters';
-import { CreateReservationRequest } from 'features/meeting-room-reservation/model/types';
-import { getRooms, getReservations, createReservation } from 'features/meeting-room-reservation/api/remotes';
+import { useCreateReservationMutation } from 'features/meeting-room-reservation/hooks/useCreateReservationMutation';
+import { getRooms, getReservations } from 'features/meeting-room-reservation/api/remotes';
 import { AvailableRoomList } from './components/AvailableRoomList';
 import { FilterPanel } from './components/FilterPanel';
 import axios from 'axios';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { filters, updateFilter } = useBookingFilters();
   const { date, startTime, endTime, attendees, equipment, preferredFloor } = filters;
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const createReservationMutation = useCreateReservationMutation();
 
   const { data: rooms = [] } = useQuery(meetingRoomReservationQueryKeys.rooms(), getRooms);
   const { data: reservations = [] } = useQuery(meetingRoomReservationQueryKeys.reservations(date), () => getReservations(date), {
     enabled: !!date,
-  });
-
-  const createMutation = useMutation((data: CreateReservationRequest) => createReservation(data), {
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: meetingRoomReservationQueryKeys.reservations(variables.date),
-      });
-      queryClient.invalidateQueries({
-        queryKey: meetingRoomReservationQueryKeys.myReservations(),
-      });
-    },
   });
 
   const handleFilterChange = () => {
@@ -61,7 +50,7 @@ export function RoomBookingPage() {
     }
 
     try {
-      const result = await createMutation.mutateAsync({
+      const result = await createReservationMutation.mutateAsync({
         roomId: selectedRoomId,
         date,
         start: startTime,
@@ -190,7 +179,7 @@ export function RoomBookingPage() {
         <AvailableRoomList
           rooms={availableRooms}
           selectedRoomId={selectedRoomId}
-          isSubmitting={createMutation.isLoading}
+          isSubmitting={createReservationMutation.isLoading}
           onSelectRoom={setSelectedRoomId}
           onSubmit={handleBook}
         />
